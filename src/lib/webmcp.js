@@ -321,15 +321,34 @@ export function initializeWebMCP() {
   // Expose on window.mcp and navigator.modelContext for WebMCP standard agents
   if (typeof window !== 'undefined') {
     window.mcp = mcpProvider;
-    if (navigator) {
+    
+    if (typeof navigator !== 'undefined') {
       try {
-        navigator.modelContext = mcpProvider;
+        Object.defineProperty(navigator, 'modelContext', {
+          value: mcpProvider,
+          writable: true,
+          configurable: true,
+          enumerable: true
+        });
       } catch {
-        // ignore if read-only
+        try {
+          navigator.modelContext = mcpProvider;
+        } catch {
+          // ignore
+        }
       }
     }
-    console.log('⚡ [WebMCP] Initialized and registered 7 WebMCP tools.');
+    console.log('⚡ [WebMCP] Initialized and registered 7 WebMCP tools on window.mcp & navigator.modelContext.');
   }
 
   return mcpProvider;
+}
+
+// Auto-initialize immediately upon script evaluation
+if (typeof window !== 'undefined') {
+  try {
+    initializeWebMCP();
+  } catch (err) {
+    console.warn('Early WebMCP initialization warning:', err);
+  }
 }
