@@ -12,7 +12,8 @@ import {
   Loader2,
   Database,
   Dices,
-  Palette
+  Palette,
+  Navigation
 } from 'lucide-react';
 import { 
   getAvatarUrl, 
@@ -23,6 +24,7 @@ import {
   clearActiveUser 
 } from '../lib/userStore';
 import { authenticateWithEmail } from '../lib/api';
+import { getUserCurrentLocation } from '../lib/geo';
 
 export default function ProfileDrawer({
   isOpen,
@@ -36,6 +38,7 @@ export default function ProfileDrawer({
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
   const [isLoadingAuth, setIsLoadingAuth] = useState(false);
+  const [isLocatingCity, setIsLocatingCity] = useState(false);
   const [authMessage, setAuthMessage] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -372,13 +375,36 @@ export default function ProfileDrawer({
               </div>
 
               <div>
-                <label className="text-[11px] text-slate-600 font-semibold uppercase">City</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] text-slate-600 font-semibold uppercase">City / Location</label>
+                  <button
+                    type="button"
+                    disabled={isLocatingCity}
+                    onClick={async () => {
+                      setIsLocatingCity(true);
+                      try {
+                        const gps = await getUserCurrentLocation();
+                        setFormData(prev => ({ ...prev, location: gps.name || gps.formattedAddress }));
+                      } finally {
+                        setIsLocatingCity(false);
+                      }
+                    }}
+                    className="text-[10px] font-bold text-cyan-700 hover:text-cyan-900 flex items-center gap-1 transition-colors disabled:opacity-50"
+                  >
+                    {isLocatingCity ? (
+                      <Loader2 className="w-3 h-3 text-cyan-600 animate-spin" />
+                    ) : (
+                      <Navigation className="w-3 h-3 text-cyan-600" />
+                    )}
+                    <span>{isLocatingCity ? 'Detecting...' : 'Current Location'}</span>
+                  </button>
+                </div>
                 <input
                   type="text"
                   required
                   value={formData.location}
                   onChange={e => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full mt-1 bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-sm text-slate-900 focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-sm text-slate-900 focus:outline-none focus:border-cyan-500"
                 />
               </div>
 

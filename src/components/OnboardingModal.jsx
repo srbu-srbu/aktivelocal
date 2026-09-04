@@ -9,7 +9,8 @@ import {
   ShieldCheck, 
   ArrowRight,
   Palette,
-  Loader2
+  Loader2,
+  Navigation
 } from 'lucide-react';
 import { 
   getAvatarUrl, 
@@ -19,6 +20,7 @@ import {
   saveActiveUser 
 } from '../lib/userStore';
 import { authenticateWithEmail } from '../lib/api';
+import { getUserCurrentLocation } from '../lib/geo';
 
 export default function OnboardingModal({
   isOpen,
@@ -30,6 +32,7 @@ export default function OnboardingModal({
   const [email, setEmail] = useState('');
   const [location, setLocation] = useState('Seattle, WA');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLocatingCity, setIsLocatingCity] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
   if (!isOpen) return null;
@@ -233,9 +236,32 @@ export default function OnboardingModal({
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
-                Permanent City / Location
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                  Permanent City / Location
+                </label>
+                <button
+                  type="button"
+                  disabled={isLocatingCity}
+                  onClick={async () => {
+                    setIsLocatingCity(true);
+                    try {
+                      const gps = await getUserCurrentLocation();
+                      setLocation(gps.name || gps.formattedAddress || 'Seattle, WA');
+                    } finally {
+                      setIsLocatingCity(false);
+                    }
+                  }}
+                  className="text-[11px] font-bold text-cyan-600 hover:text-cyan-800 flex items-center gap-1 transition-colors disabled:opacity-50"
+                >
+                  {isLocatingCity ? (
+                    <Loader2 className="w-3.5 h-3.5 text-cyan-600 animate-spin" />
+                  ) : (
+                    <Navigation className="w-3.5 h-3.5 text-cyan-600" />
+                  )}
+                  <span>{isLocatingCity ? 'Detecting...' : 'Current Location'}</span>
+                </button>
+              </div>
               <div className="relative">
                 <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input

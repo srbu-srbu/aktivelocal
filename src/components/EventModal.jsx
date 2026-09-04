@@ -407,11 +407,16 @@ export default function EventModal({
                   </label>
                   <button
                     type="button"
+                    disabled={isSearchingLocation}
                     onClick={handleUseCurrentGPSLocation}
-                    className="text-[11px] font-bold text-cyan-600 hover:text-cyan-800 flex items-center gap-1 transition-colors"
+                    className="text-[11px] font-bold text-cyan-600 hover:text-cyan-800 flex items-center gap-1 transition-colors disabled:opacity-50"
                   >
-                    <Navigation className="w-3 h-3 text-cyan-500" />
-                    <span>Use My GPS</span>
+                    {isSearchingLocation ? (
+                      <Loader2 className="w-3 h-3 text-cyan-600 animate-spin" />
+                    ) : (
+                      <Navigation className="w-3 h-3 text-cyan-500" />
+                    )}
+                    <span>{isSearchingLocation ? 'Detecting...' : 'Current Location'}</span>
                   </button>
                 </div>
 

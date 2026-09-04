@@ -63,12 +63,19 @@ export default function LocationModal({
     onClose();
   };
 
+  const [isLocating, setIsLocating] = useState(false);
+
   const handleUseGPS = async () => {
-    setLoading(true);
-    const resolved = await getUserCurrentLocation();
-    onLocationSelected(resolved);
-    setLoading(false);
-    onClose();
+    setIsLocating(true);
+    try {
+      const resolved = await getUserCurrentLocation();
+      onLocationSelected(resolved);
+      onClose();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLocating(false);
+    }
   };
 
   return (
@@ -173,11 +180,15 @@ export default function LocationModal({
             <button
               type="button"
               onClick={handleUseGPS}
-              disabled={loading}
-              className="w-full py-2.5 px-3 bg-slate-100 hover:bg-slate-200/80 text-slate-700 hover:text-slate-900 rounded-xl text-xs font-semibold border border-slate-200 flex items-center justify-center gap-2 transition-all shadow-sm group"
+              disabled={isLocating || loading}
+              className="w-full py-2.5 px-3 bg-slate-100 hover:bg-slate-200/80 text-slate-700 hover:text-slate-900 rounded-xl text-xs font-semibold border border-slate-200 flex items-center justify-center gap-2 transition-all shadow-sm group disabled:opacity-75"
             >
-              <Navigation className="w-3.5 h-3.5 text-cyan-600 group-hover:scale-110 transition-transform" />
-              <span>Use Current GPS Location</span>
+              {isLocating ? (
+                <Loader2 className="w-3.5 h-3.5 text-cyan-600 animate-spin" />
+              ) : (
+                <Navigation className="w-3.5 h-3.5 text-cyan-600 group-hover:scale-110 transition-transform" />
+              )}
+              <span>{isLocating ? 'Detecting Location...' : 'Current Location'}</span>
             </button>
           </div>
         </form>
