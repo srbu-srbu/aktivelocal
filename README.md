@@ -52,10 +52,10 @@ aktivelocal implements the official **WebMCP Browser Standard** (`navigator.mode
 
 | Tool Name | Parameters | Description |
 | :--- | :--- | :--- |
-| `get_active_profile` | `{}` | Retrieves active user profile (email, name, birth year, location). |
+| `get_active_profile` | `{}` | Retrieves active user profile (email, name, permanent location). |
 | `search_events` | `{ query, date, radius_miles }` | Queries events within 50 miles for a given day. |
 | `get_event_details` | `{ event_id }` | Fetches complete event metadata and attendee list. |
-| `create_event` | `{ title, datetime, location, description, duration_minutes, category }` | Creates a single atomic local event. |
+| `create_event` | `{ title, datetime, location, description, duration_minutes }` | Creates a single atomic local event. |
 | `rsvp_event` | `{ event_id, action }` | RSVPs or cancels RSVP for the active user. |
 | `create_recurring_series` | `{ title, day_offset_start, hour, minute, weeks_count, location, description }` | **Agent Superpower**: Synthesizes multi-week recurring series via atomic tools. |
 | `plan_weekend_itinerary` | `{ target_weekend_day_offset, vibes, auto_rsvp }` | **Agent Superpower**: Autonomous multi-step weekend planner & auto-RSVP. |

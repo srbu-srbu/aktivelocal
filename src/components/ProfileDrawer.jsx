@@ -2,19 +2,25 @@ import React, { useState } from 'react';
 import { 
   User, 
   Mail, 
-  Calendar, 
   MapPin, 
   Edit3, 
   LogOut, 
   X, 
   ShieldCheck, 
   CheckCircle2, 
-  Sparkles,
   LogIn,
   Loader2,
-  Database
+  Database,
+  Dices,
+  Palette
 } from 'lucide-react';
-import { getAvatarUrl, PRESET_PERSONAS, saveActiveUser } from '../lib/userStore';
+import { 
+  getAvatarUrl, 
+  getRandomAvatarSeed,
+  AVATAR_PRESETS,
+  PRESET_PERSONAS, 
+  saveActiveUser 
+} from '../lib/userStore';
 import { authenticateWithEmail } from '../lib/api';
 
 export default function ProfileDrawer({
@@ -25,20 +31,43 @@ export default function ProfileDrawer({
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isEmailSignIn, setIsEmailSignIn] = useState(false);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
   const [isLoadingAuth, setIsLoadingAuth] = useState(false);
   const [authMessage, setAuthMessage] = useState(null);
 
   const [formData, setFormData] = useState({
-    displayName: currentUser.displayName || '',
-    email: currentUser.email || '',
-    birthYear: currentUser.birthYear || 1996,
-    location: currentUser.location || 'Seattle, WA'
+    displayName: currentUser?.displayName || '',
+    email: currentUser?.email || '',
+    location: currentUser?.location || 'Seattle, WA',
+    avatarSeed: currentUser?.avatarSeed || 'aktivelocal-user'
   });
 
-  if (!isOpen) return null;
+  if (!isOpen || !currentUser) return null;
 
-  const avatarUrl = getAvatarUrl(currentUser.avatarSeed || currentUser.displayName);
+  const currentSeed = formData.avatarSeed || currentUser.avatarSeed || currentUser.displayName || 'aktivelocal';
+  const avatarUrl = getAvatarUrl(currentSeed);
+
+  const handleShuffleAvatar = () => {
+    const newSeed = getRandomAvatarSeed();
+    setFormData(prev => ({ ...prev, avatarSeed: newSeed }));
+    const updated = {
+      ...currentUser,
+      avatarSeed: newSeed
+    };
+    saveActiveUser(updated);
+    onUserChanged(updated);
+  };
+
+  const handleSelectPreset = (presetSeed) => {
+    setFormData(prev => ({ ...prev, avatarSeed: presetSeed }));
+    const updated = {
+      ...currentUser,
+      avatarSeed: presetSeed
+    };
+    saveActiveUser(updated);
+    onUserChanged(updated);
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -46,11 +75,14 @@ export default function ProfileDrawer({
     setAuthMessage(null);
     try {
       const updated = await authenticateWithEmail({
-        ...formData,
-        avatarSeed: formData.displayName || formData.email
+        displayName: formData.displayName.trim(),
+        email: formData.email.trim(),
+        location: formData.location.trim(),
+        avatarSeed: formData.avatarSeed || currentUser.avatarSeed
       });
       onUserChanged(updated);
       setIsEditing(false);
+      setShowAvatarPicker(false);
       setAuthMessage({ type: 'success', text: 'Profile saved & synced to Neon Postgres!' });
     } catch (err) {
       setAuthMessage({ type: 'error', text: err.message || 'Failed to save profile' });
@@ -83,11 +115,12 @@ export default function ProfileDrawer({
     setFormData({
       displayName: preset.displayName,
       email: preset.email,
-      birthYear: preset.birthYear,
-      location: preset.location
+      location: preset.location,
+      avatarSeed: preset.avatarSeed
     });
     setIsEditing(false);
     setIsEmailSignIn(false);
+    setShowAvatarPicker(false);
   };
 
   const handleLogout = () => {
@@ -96,6 +129,7 @@ export default function ProfileDrawer({
     onUserChanged(judge);
     setIsEditing(false);
     setIsEmailSignIn(false);
+    setShowAvatarPicker(false);
     onClose();
   };
 
@@ -145,7 +179,7 @@ export default function ProfileDrawer({
           {/* 400x400 Avatar Container */}
           <div className="flex flex-col items-center">
             <div className="relative group">
-              <div className="w-44 h-44 rounded-3xl overflow-hidden ring-2 ring-slate-200 shadow-lg bg-slate-100 flex items-center justify-center group-hover:ring-cyan-500 transition-all">
+              <div className="w-40 h-40 rounded-3xl overflow-hidden ring-2 ring-slate-200 shadow-lg bg-slate-100 flex items-center justify-center group-hover:ring-cyan-500 transition-all">
                 <img
                   src={avatarUrl}
                   alt={currentUser.displayName}
@@ -156,9 +190,65 @@ export default function ProfileDrawer({
                 <CheckCircle2 className="w-3.5 h-3.5 text-white" />
               </div>
             </div>
-            <p className="text-[11px] text-slate-500 mt-2.5 font-mono">
-              Deterministic 400×400 Avatar
-            </p>
+
+            {/* Avatar Quick Switchers */}
+            <div className="flex items-center gap-2 mt-3">
+              <button
+                type="button"
+                onClick={handleShuffleAvatar}
+                className="py-1 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-all border border-slate-200 flex items-center gap-1 shadow-sm active:scale-95"
+              >
+                <Dices className="w-3 h-3 text-cyan-600" />
+                <span>Shuffle</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+                className={`py-1 px-2.5 rounded-xl text-xs font-semibold transition-all border flex items-center gap-1 shadow-sm active:scale-95 ${
+                  showAvatarPicker 
+                    ? 'bg-cyan-50 text-cyan-800 border-cyan-300' 
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                }`}
+              >
+                <Palette className="w-3 h-3 text-cyan-600" />
+                <span>Picker</span>
+              </button>
+            </div>
+
+            {/* Expandable Avatar Grid */}
+            {showAvatarPicker && (
+              <div className="w-full mt-3 p-3 bg-slate-50 border border-slate-200 rounded-2xl animate-fade-in">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 text-center">
+                  Select Archetype:
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  {AVATAR_PRESETS.map((preset) => {
+                    const presetUrl = getAvatarUrl(preset.seed);
+                    const isSelected = currentSeed === preset.seed;
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => handleSelectPreset(preset.seed)}
+                        className={`p-1 rounded-xl border flex flex-col items-center gap-1 transition-all ${
+                          isSelected
+                            ? 'bg-cyan-50 border-cyan-500 ring-2 ring-cyan-400/50 shadow-sm'
+                            : 'bg-white hover:bg-slate-100 border-slate-200'
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-lg overflow-hidden bg-slate-100">
+                          <img src={presetUrl} alt={preset.name} className="w-full h-full object-cover" />
+                        </div>
+                        <span className="text-[9px] font-bold text-slate-700 truncate w-full text-center">
+                          {preset.name}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Email Passwordless Login Modal Toggle */}
@@ -221,20 +311,11 @@ export default function ProfileDrawer({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">Birth Year</span>
-                    <span className="text-slate-700 font-semibold">{currentUser.birthYear}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                  <div className="min-w-0">
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">Permanent City</span>
-                    <span className="text-slate-700 font-semibold truncate block">{currentUser.location}</span>
-                  </div>
+              <div className="flex items-center gap-2.5 text-slate-700 pt-1 border-t border-slate-200">
+                <MapPin className="w-4 h-4 text-cyan-600 flex-shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">Permanent City</span>
+                  <span className="text-slate-700 font-semibold truncate block">{currentUser.location}</span>
                 </div>
               </div>
 
@@ -244,8 +325,8 @@ export default function ProfileDrawer({
                     setFormData({
                       displayName: currentUser.displayName,
                       email: currentUser.email,
-                      birthYear: currentUser.birthYear,
-                      location: currentUser.location
+                      location: currentUser.location,
+                      avatarSeed: currentUser.avatarSeed
                     });
                     setIsEditing(true);
                   }}
@@ -287,29 +368,15 @@ export default function ProfileDrawer({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[11px] text-slate-600 font-semibold uppercase">Birth Year</label>
-                  <input
-                    type="number"
-                    min="1920"
-                    max="2020"
-                    required
-                    value={formData.birthYear}
-                    onChange={e => setFormData({ ...formData, birthYear: Number(e.target.value) })}
-                    className="w-full mt-1 bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-sm text-slate-900 focus:outline-none focus:border-cyan-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] text-slate-600 font-semibold uppercase">City</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.location}
-                    onChange={e => setFormData({ ...formData, location: e.target.value })}
-                    className="w-full mt-1 bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-sm text-slate-900 focus:outline-none focus:border-cyan-500"
-                  />
-                </div>
+              <div>
+                <label className="text-[11px] text-slate-600 font-semibold uppercase">City</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.location}
+                  onChange={e => setFormData({ ...formData, location: e.target.value })}
+                  className="w-full mt-1 bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-sm text-slate-900 focus:outline-none focus:border-cyan-500"
+                />
               </div>
 
               <div className="flex gap-2 pt-2">

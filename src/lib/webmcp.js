@@ -9,7 +9,7 @@ import { resolveLocation } from './geo';
 export const WEBMCP_TOOLS = [
   {
     name: 'get_active_profile',
-    description: 'Retrieves the active user profile including email, display name, birth year, and location.',
+    description: 'Retrieves the active user profile including email, display name, and permanent location.',
     parameters: {
       type: 'object',
       properties: {},

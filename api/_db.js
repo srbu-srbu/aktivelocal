@@ -36,7 +36,6 @@ export async function ensureSchema() {
       id VARCHAR(64) PRIMARY KEY,
       email VARCHAR(255) UNIQUE NOT NULL,
       display_name VARCHAR(255) NOT NULL,
-      birth_year INTEGER,
       location VARCHAR(255),
       role VARCHAR(100),
       avatar_seed VARCHAR(255),
@@ -73,11 +72,11 @@ export async function ensureSchema() {
   const existingUsers = await sql`SELECT COUNT(*)::int as count FROM users;`;
   if (existingUsers[0].count === 0) {
     await sql`
-      INSERT INTO users (id, email, display_name, birth_year, location, role, avatar_seed)
+      INSERT INTO users (id, email, display_name, location, role, avatar_seed)
       VALUES 
-        ('user-host-01', 'alex.host@aktivelocal.com', 'Alex Rivera', 1994, 'Seattle, WA (Downtown)', 'Host & Community Lead', 'alex-rivera-organizer'),
-        ('user-judge-01', 'judge.devpost@aktivelocal.com', 'Devpost Judge', 1996, 'Seattle, WA', 'Hackathon Reviewer', 'judge-reviewer-aktive'),
-        ('user-jordan-01', 'jordan.lee@example.com', 'Jordan Lee', 1998, 'Seattle, WA (Capitol Hill)', 'Active Runner & Foodie', 'jordan-lee-outdoors')
+        ('user-host-01', 'alex.host@aktivelocal.com', 'Alex Rivera', 'Seattle, WA (Downtown)', 'Host & Community Lead', 'alex-rivera-organizer'),
+        ('user-judge-01', 'judge.devpost@aktivelocal.com', 'Devpost Judge', 'Seattle, WA', 'Hackathon Reviewer', 'judge-reviewer-aktive'),
+        ('user-jordan-01', 'jordan.lee@example.com', 'Jordan Lee', 'Seattle, WA (Capitol Hill)', 'Active Runner & Foodie', 'jordan-lee-outdoors')
       ON CONFLICT (id) DO NOTHING;
     `;
   }

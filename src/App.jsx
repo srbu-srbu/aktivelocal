@@ -6,9 +6,10 @@ import SearchBar from './components/SearchBar';
 import DayPills, { generateSevenDays } from './components/DayPills';
 import EventList from './components/EventList';
 import EventModal from './components/EventModal';
+import OnboardingModal from './components/OnboardingModal';
 import WebMCPAgentDock from './components/WebMCPAgentDock';
 
-import { getActiveUser } from './lib/userStore';
+import { getActiveUser, hasStoredUser, PRESET_PERSONAS } from './lib/userStore';
 import { 
   filterEventsInMemory 
 } from './lib/eventStore';
@@ -28,8 +29,9 @@ export default function App() {
   // Navigation State
   const [activeTab, setActiveTab] = useState('search'); // 'search' | 'my-events'
   
-  // User Profile State
-  const [currentUser, setCurrentUser] = useState(getActiveUser);
+  // User Profile & First-Time Onboarding State
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(() => !hasStoredUser());
+  const [currentUser, setCurrentUser] = useState(() => getActiveUser() || PRESET_PERSONAS[0]);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   // Search Location (Stored only in localStorage on device)
@@ -237,7 +239,17 @@ export default function App() {
         onToggleRSVP={handleToggleRSVP}
       />
 
-      {/* 5. WebMCP AI Agent & Protocol Inspector Dock */}
+      {/* 5. First-Time User Onboarding Modal */}
+      <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onComplete={(user) => {
+          setCurrentUser(user);
+          setIsOnboardingOpen(false);
+          refreshDayEvents();
+        }}
+      />
+
+      {/* 6. WebMCP AI Agent & Protocol Inspector Dock */}
       <WebMCPAgentDock />
 
     </div>

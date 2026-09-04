@@ -211,10 +211,9 @@ export async function authenticateWithEmail(emailData) {
     id: `user-${Date.now().toString(36)}`,
     displayName: emailData.displayName || emailData.email.split('@')[0],
     email: emailData.email,
-    birthYear: emailData.birthYear || 1996,
     location: emailData.location || 'Seattle, WA',
     role: 'Active Member',
-    avatarSeed: emailData.displayName || emailData.email
+    avatarSeed: emailData.avatarSeed || emailData.displayName || emailData.email
   };
   saveActiveUser(fallbackUser);
   return fallbackUser;

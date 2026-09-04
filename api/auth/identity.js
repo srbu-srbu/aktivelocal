@@ -2,7 +2,6 @@
 import { getDb, ensureSchema } from '../_db.js';
 
 export default async function handler(req, res) {
-  // CORS & headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -26,7 +25,7 @@ export default async function handler(req, res) {
       let users = [];
       if (email) {
         users = await sql`
-          SELECT id, email, display_name as "displayName", birth_year as "birthYear", 
+          SELECT id, email, display_name as "displayName", 
                  location, role, avatar_seed as "avatarSeed", created_at as "createdAt"
           FROM users 
           WHERE LOWER(email) = LOWER(${email.trim()})
@@ -34,7 +33,7 @@ export default async function handler(req, res) {
         `;
       } else if (id) {
         users = await sql`
-          SELECT id, email, display_name as "displayName", birth_year as "birthYear", 
+          SELECT id, email, display_name as "displayName", 
                  location, role, avatar_seed as "avatarSeed", created_at as "createdAt"
           FROM users 
           WHERE id = ${id}
@@ -51,7 +50,7 @@ export default async function handler(req, res) {
 
     // POST: Authenticate or Register passwordless user
     if (req.method === 'POST') {
-      const { email, displayName, birthYear, location, role, avatarSeed } = req.body || {};
+      const { email, displayName, location, role, avatarSeed } = req.body || {};
 
       if (!email || !email.includes('@')) {
         return res.status(400).json({ error: 'Valid email is required' });
@@ -61,7 +60,7 @@ export default async function handler(req, res) {
 
       // Check if user already exists
       const existing = await sql`
-        SELECT id, email, display_name as "displayName", birth_year as "birthYear", 
+        SELECT id, email, display_name as "displayName", 
                location, role, avatar_seed as "avatarSeed", created_at as "createdAt"
         FROM users 
         WHERE LOWER(email) = ${normalizedEmail}
@@ -70,16 +69,15 @@ export default async function handler(req, res) {
 
       if (existing.length > 0) {
         // Returning user authenticated! If update fields provided, update profile
-        if (displayName || location || birthYear) {
+        if (displayName || location || avatarSeed) {
           const updated = await sql`
             UPDATE users
             SET 
               display_name = COALESCE(${displayName}, display_name),
-              birth_year = COALESCE(${birthYear ? Number(birthYear) : null}, birth_year),
               location = COALESCE(${location}, location),
               avatar_seed = COALESCE(${avatarSeed || displayName}, avatar_seed)
             WHERE id = ${existing[0].id}
-            RETURNING id, email, display_name as "displayName", birth_year as "birthYear", 
+            RETURNING id, email, display_name as "displayName", 
                       location, role, avatar_seed as "avatarSeed", created_at as "createdAt";
           `;
           return res.status(200).json({ user: updated[0], isNewUser: false });
@@ -91,14 +89,13 @@ export default async function handler(req, res) {
       const newId = `user-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
       const cleanName = displayName || normalizedEmail.split('@')[0];
       const cleanLocation = location || 'Seattle, WA';
-      const cleanBirthYear = birthYear ? Number(birthYear) : 1996;
       const cleanRole = role || 'Active Member';
       const cleanSeed = avatarSeed || cleanName;
 
       const created = await sql`
-        INSERT INTO users (id, email, display_name, birth_year, location, role, avatar_seed)
-        VALUES (${newId}, ${normalizedEmail}, ${cleanName}, ${cleanBirthYear}, ${cleanLocation}, ${cleanRole}, ${cleanSeed})
-        RETURNING id, email, display_name as "displayName", birth_year as "birthYear", 
+        INSERT INTO users (id, email, display_name, location, role, avatar_seed)
+        VALUES (${newId}, ${normalizedEmail}, ${cleanName}, ${cleanLocation}, ${cleanRole}, ${cleanSeed})
+        RETURNING id, email, display_name as "displayName", 
                   location, role, avatar_seed as "avatarSeed", created_at as "createdAt";
       `;
 
