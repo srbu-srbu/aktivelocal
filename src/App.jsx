@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { CalendarCheck2 } from 'lucide-react';
 import Header from './components/Header';
 import ProfileDrawer from './components/ProfileDrawer';
 import SearchBar from './components/SearchBar';
@@ -146,9 +147,12 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col selection:bg-cyan-500 selection:text-black">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col relative selection:bg-cyan-500 selection:text-white font-sans">
       
-      {/* 1. Header (Logo, Tabs, Profile Trigger) */}
+      {/* Subtle Ambient Radial Lighting */}
+      <div className="ambient-glow" />
+
+      {/* 1. Header (Logo, Segmented Tabs, Profile Trigger) */}
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -157,7 +161,7 @@ export default function App() {
       />
 
       {/* 2. Main Content Container */}
-      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-4 space-y-4">
+      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-5 space-y-4 relative z-10">
         
         {/* Search Bar with Map Pin (Available on Search Tab) */}
         {activeTab === 'search' && (
@@ -180,23 +184,27 @@ export default function App() {
 
         {/* My Events Tab Header Banner */}
         {activeTab === 'my-events' && (
-          <div className="bg-gradient-to-r from-orange-950/40 via-slate-900 to-slate-900 border border-orange-800/40 rounded-2xl p-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-1.5">
-                <span>⭐</span>
-                <span>My RSVPs & Hosted Events</span>
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Showing all gatherings associated with <strong className="text-orange-400">{currentUser.displayName}</strong>
-              </p>
+          <div className="bg-white rounded-3xl p-5 border border-slate-200 flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600">
+                <CalendarCheck2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">
+                  My RSVPs & Hosted Gatherings
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Showing events for <strong className="text-orange-600">{currentUser.displayName}</strong>
+                </p>
+              </div>
             </div>
-            <span className="text-xs bg-orange-500/20 text-orange-300 font-bold px-3 py-1 rounded-full border border-orange-500/30">
-              {displayedEvents.length} Events
+            <span className="text-xs bg-orange-50 text-orange-700 font-bold px-3 py-1 rounded-full border border-orange-200 shadow-sm">
+              {displayedEvents.length} {displayedEvents.length === 1 ? 'Event' : 'Events'}
             </span>
           </div>
         )}
 
-        {/* Event Feed (+ Create Event top card + 2-line minimalist cards) */}
+        {/* Event Feed (+ Create Event top card + 2-line cards) */}
         <EventList
           events={displayedEvents}
           searchLocation={searchLocation}
@@ -238,3 +246,4 @@ export default function App() {
     </div>
   );
 }
+

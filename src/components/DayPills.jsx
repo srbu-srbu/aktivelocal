@@ -5,7 +5,7 @@ import React from 'react';
  */
 export function generateSevenDays() {
   const days = [];
-  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const dayNamesShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   for (let i = 0; i < 7; i++) {
     const d = new Date();
@@ -15,20 +15,23 @@ export function generateSevenDays() {
     const date = d.getDate();
     const dateFormatted = `${month}/${date}`;
 
-    let label = '';
+    let primaryLabel = '';
+    let subLabel = dateFormatted;
+
     if (i === 0) {
-      label = `Today (${dateFormatted})`;
+      primaryLabel = 'Today';
     } else if (i === 1) {
-      label = `Tomorrow (${dateFormatted})`;
+      primaryLabel = 'Tomorrow';
     } else {
-      label = `${dayNames[d.getDay()]} (${dateFormatted})`;
+      primaryLabel = dayNamesShort[d.getDay()];
     }
 
     days.push({
       offset: i,
       isoDate: d.toISOString(),
       dayString: d.toISOString().split('T')[0],
-      label
+      primaryLabel,
+      subLabel
     });
   }
 
@@ -49,13 +52,18 @@ export default function DayPills({
             <button
               key={d.offset}
               onClick={() => onSelectDay(d.offset)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap border ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs transition-all duration-200 whitespace-nowrap border ${
                 isSelected
-                  ? 'bg-cyan-500 text-slate-950 border-cyan-400 font-bold shadow-md shadow-cyan-500/20 scale-[1.02]'
-                  : 'bg-[#161b22] hover:bg-slate-800 text-slate-300 border-slate-800 hover:border-slate-700'
+                  ? 'bg-cyan-600 text-white font-bold border-cyan-600 shadow-md shadow-cyan-600/20 scale-[1.02]'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border-slate-200 shadow-sm'
               }`}
             >
-              {d.label}
+              <span className={isSelected ? 'font-extrabold' : 'font-semibold'}>
+                {d.primaryLabel}
+              </span>
+              <span className={`text-[11px] ${isSelected ? 'text-cyan-100 font-bold' : 'text-slate-400 font-normal'}`}>
+                {d.subLabel}
+              </span>
             </button>
           );
         })}
@@ -63,3 +71,4 @@ export default function DayPills({
     </div>
   );
 }
+
