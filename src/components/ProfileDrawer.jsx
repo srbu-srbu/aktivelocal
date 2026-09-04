@@ -9,9 +9,13 @@ import {
   X, 
   ShieldCheck, 
   CheckCircle2, 
-  Sparkles 
+  Sparkles,
+  LogIn,
+  Loader2,
+  Database
 } from 'lucide-react';
-import { getAvatarUrl, PRESET_PERSONAS, updateActiveUserProfile, saveActiveUser } from '../lib/userStore';
+import { getAvatarUrl, PRESET_PERSONAS, saveActiveUser } from '../lib/userStore';
+import { authenticateWithEmail } from '../lib/api';
 
 export default function ProfileDrawer({
   isOpen,
@@ -20,6 +24,11 @@ export default function ProfileDrawer({
   onUserChanged
 }) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isEmailSignIn, setIsEmailSignIn] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [isLoadingAuth, setIsLoadingAuth] = useState(false);
+  const [authMessage, setAuthMessage] = useState(null);
+
   const [formData, setFormData] = useState({
     displayName: currentUser.displayName || '',
     email: currentUser.email || '',
@@ -31,14 +40,44 @@ export default function ProfileDrawer({
 
   const avatarUrl = getAvatarUrl(currentUser.avatarSeed || currentUser.displayName);
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    const updated = updateActiveUserProfile(formData);
-    onUserChanged(updated);
-    setIsEditing(false);
+    setIsLoadingAuth(true);
+    setAuthMessage(null);
+    try {
+      const updated = await authenticateWithEmail({
+        ...formData,
+        avatarSeed: formData.displayName || formData.email
+      });
+      onUserChanged(updated);
+      setIsEditing(false);
+      setAuthMessage({ type: 'success', text: 'Profile saved & synced to Neon Postgres!' });
+    } catch (err) {
+      setAuthMessage({ type: 'error', text: err.message || 'Failed to save profile' });
+    } finally {
+      setIsLoadingAuth(false);
+    }
   };
 
-  const handleSwitchPersona = (preset) => {
+  const handleEmailPasswordlessLogin = async (e) => {
+    e.preventDefault();
+    if (!loginEmail || !loginEmail.includes('@')) return;
+    setIsLoadingAuth(true);
+    setAuthMessage(null);
+    try {
+      const user = await authenticateWithEmail({ email: loginEmail });
+      onUserChanged(user);
+      setIsEmailSignIn(false);
+      setLoginEmail('');
+      setAuthMessage({ type: 'success', text: `Signed in as ${user.displayName || user.email} via Neon Postgres!` });
+    } catch (err) {
+      setAuthMessage({ type: 'error', text: err.message || 'Error authenticating user' });
+    } finally {
+      setIsLoadingAuth(false);
+    }
+  };
+
+  const handleSwitchPersona = async (preset) => {
     saveActiveUser(preset);
     onUserChanged(preset);
     setFormData({
@@ -48,12 +87,15 @@ export default function ProfileDrawer({
       location: preset.location
     });
     setIsEditing(false);
+    setIsEmailSignIn(false);
   };
 
   const handleLogout = () => {
     const judge = PRESET_PERSONAS[1];
     saveActiveUser(judge);
     onUserChanged(judge);
+    setIsEditing(false);
+    setIsEmailSignIn(false);
     onClose();
   };
 
@@ -71,9 +113,10 @@ export default function ProfileDrawer({
         {/* Drawer Header */}
         <div className="p-4 px-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-slate-900">User Profile</h2>
-            <span className="text-[10px] font-bold text-cyan-700 bg-cyan-50 px-2.5 py-0.5 rounded-full border border-cyan-200">
-              {currentUser.role || 'Active User'}
+            <h2 className="text-base font-bold text-slate-900">User Identity</h2>
+            <span className="text-[10px] font-bold text-cyan-700 bg-cyan-50 px-2.5 py-0.5 rounded-full border border-cyan-200 flex items-center gap-1">
+              <Database className="w-2.5 h-2.5 text-cyan-600" />
+              <span>Neon Postgres</span>
             </span>
           </div>
           <button
@@ -85,12 +128,24 @@ export default function ProfileDrawer({
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+
+          {/* Feedback banner */}
+          {authMessage && (
+            <div className={`p-2.5 rounded-xl text-xs flex items-center gap-2 ${
+              authMessage.type === 'success' 
+                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
+                : 'bg-red-50 text-red-800 border border-red-200'
+            }`}>
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+              <span>{authMessage.text}</span>
+            </div>
+          )}
           
           {/* 400x400 Avatar Container */}
           <div className="flex flex-col items-center">
             <div className="relative group">
-              <div className="w-48 h-48 rounded-3xl overflow-hidden ring-2 ring-slate-200 shadow-lg bg-slate-100 flex items-center justify-center group-hover:ring-cyan-500 transition-all">
+              <div className="w-44 h-44 rounded-3xl overflow-hidden ring-2 ring-slate-200 shadow-lg bg-slate-100 flex items-center justify-center group-hover:ring-cyan-500 transition-all">
                 <img
                   src={avatarUrl}
                   alt={currentUser.displayName}
@@ -101,14 +156,55 @@ export default function ProfileDrawer({
                 <CheckCircle2 className="w-3.5 h-3.5 text-white" />
               </div>
             </div>
-            <p className="text-[11px] text-slate-500 mt-3 font-mono">
-              Deterministic 400×400 DiceBear Avatar
+            <p className="text-[11px] text-slate-500 mt-2.5 font-mono">
+              Deterministic 400×400 Avatar
             </p>
           </div>
 
-          {/* Profile Details or Edit Form */}
-          {!isEditing ? (
-            <div className="space-y-3.5 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs shadow-inner">
+          {/* Email Passwordless Login Modal Toggle */}
+          {isEmailSignIn ? (
+            <form onSubmit={handleEmailPasswordlessLogin} className="space-y-3 bg-cyan-50/50 p-4 rounded-2xl border border-cyan-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-cyan-900">
+                  <Mail className="w-3.5 h-3.5 text-cyan-600" />
+                  <span>Email-Based Passwordless Sign In</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsEmailSignIn(false)}
+                  className="text-slate-400 hover:text-slate-600 text-xs"
+                >
+                  Cancel
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-600 leading-tight">
+                Enter your email address to sync your identity & created events with Neon Postgres.
+              </p>
+              <div>
+                <input
+                  type="email"
+                  required
+                  placeholder="your.email@example.com"
+                  value={loginEmail}
+                  onChange={e => setLoginEmail(e.target.value)}
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isLoadingAuth}
+                className="w-full py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-cyan-600/20 disabled:opacity-50"
+              >
+                {isLoadingAuth ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <LogIn className="w-3.5 h-3.5" />
+                )}
+                <span>Sign In / Register</span>
+              </button>
+            </form>
+          ) : !isEditing ? (
+            <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs shadow-inner">
               <div className="flex items-center gap-2.5 text-slate-700">
                 <User className="w-4 h-4 text-cyan-600 flex-shrink-0" />
                 <div className="min-w-0">
@@ -120,7 +216,7 @@ export default function ProfileDrawer({
               <div className="flex items-center gap-2.5 text-slate-700">
                 <Mail className="w-4 h-4 text-cyan-600 flex-shrink-0" />
                 <div className="min-w-0">
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">Email</span>
+                  <span className="text-[10px] text-slate-400 uppercase font-semibold block">Email (Passwordless Identity)</span>
                   <span className="text-slate-600 font-mono text-xs truncate block">{currentUser.email}</span>
                 </div>
               </div>
@@ -142,21 +238,30 @@ export default function ProfileDrawer({
                 </div>
               </div>
 
-              <button
-                onClick={() => {
-                  setFormData({
-                    displayName: currentUser.displayName,
-                    email: currentUser.email,
-                    birthYear: currentUser.birthYear,
-                    location: currentUser.location
-                  });
-                  setIsEditing(true);
-                }}
-                className="w-full mt-2 py-2 px-3 bg-white hover:bg-slate-100 text-cyan-700 rounded-xl text-xs font-semibold transition-all border border-slate-200 flex items-center justify-center gap-1.5 shadow-sm"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>Edit Profile</span>
-              </button>
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <button
+                  onClick={() => {
+                    setFormData({
+                      displayName: currentUser.displayName,
+                      email: currentUser.email,
+                      birthYear: currentUser.birthYear,
+                      location: currentUser.location
+                    });
+                    setIsEditing(true);
+                  }}
+                  className="py-2 px-3 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold transition-all border border-slate-200 flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Edit Profile</span>
+                </button>
+                <button
+                  onClick={() => setIsEmailSignIn(true)}
+                  className="py-2 px-3 bg-cyan-50 hover:bg-cyan-100 text-cyan-700 rounded-xl text-xs font-semibold transition-all border border-cyan-200 flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                  <LogIn className="w-3.5 h-3.5 text-cyan-600" />
+                  <span>Email Sign In</span>
+                </button>
+              </div>
             </div>
           ) : (
             <form onSubmit={handleSave} className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-cyan-300">
@@ -172,7 +277,7 @@ export default function ProfileDrawer({
               </div>
 
               <div>
-                <label className="text-[11px] text-slate-600 font-semibold uppercase">Email</label>
+                <label className="text-[11px] text-slate-600 font-semibold uppercase">Email (Passwordless Identity)</label>
                 <input
                   type="email"
                   required
@@ -217,23 +322,22 @@ export default function ProfileDrawer({
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-1.5 bg-cyan-600 text-white rounded-xl text-xs font-bold hover:bg-cyan-500 shadow-md shadow-cyan-600/20"
+                  disabled={isLoadingAuth}
+                  className="flex-1 py-1.5 bg-cyan-600 text-white rounded-xl text-xs font-bold hover:bg-cyan-500 shadow-md shadow-cyan-600/20 disabled:opacity-50 flex items-center justify-center gap-1"
                 >
-                  Save Profile
+                  {isLoadingAuth && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Save to Neon</span>
                 </button>
               </div>
             </form>
           )}
 
           {/* Quick Persona Switcher for Judges */}
-          <div className="border-t border-slate-200 pt-4">
+          <div className="border-t border-slate-200 pt-3">
             <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
               <ShieldCheck className="w-3.5 h-3.5 text-cyan-600" />
-              <span>1-Click Persona Switcher</span>
+              <span>1-Click Preset Personas</span>
             </div>
-            <p className="text-[11px] text-slate-500 mb-2.5">
-              Test host organizer permissions vs. attendee RSVP permissions:
-            </p>
             <div className="space-y-1.5">
               {PRESET_PERSONAS.map(p => (
                 <button
@@ -276,5 +380,3 @@ export default function ProfileDrawer({
     </div>
   );
 }
-
-

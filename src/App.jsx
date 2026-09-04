@@ -10,14 +10,15 @@ import WebMCPAgentDock from './components/WebMCPAgentDock';
 
 import { getActiveUser } from './lib/userStore';
 import { 
-  getAllEvents, 
-  queryEventsForDay, 
-  filterEventsInMemory, 
-  createEvent, 
-  updateEvent, 
-  deleteEvent, 
-  toggleEventRSVP 
+  filterEventsInMemory 
 } from './lib/eventStore';
+import { 
+  fetchEventsFromApi, 
+  createEventApi, 
+  updateEventApi, 
+  deleteEventApi, 
+  toggleRsvpApi 
+} from './lib/api';
 import { DEFAULT_SEARCH_LOCATION } from './lib/geo';
 import { initializeWebMCP } from './lib/webmcp';
 
@@ -74,29 +75,20 @@ export default function App() {
     }
   };
 
-  // Database Query for Selected Day & 50-Mile Radius
-  const refreshDayEvents = useCallback(() => {
+  // Database Query for Selected Day & 50-Mile Radius via Neon API / local cache
+  const refreshDayEvents = useCallback(async () => {
     const targetDay = days[selectedDayOffset];
     if (!targetDay) return;
 
-    if (activeTab === 'search') {
-      const queried = queryEventsForDay(
-        targetDay.dayString,
-        searchLocation.lat,
-        searchLocation.lng,
-        50
-      );
-      setDayEvents(queried);
-    } else {
-      // My Events tab: all events user has RSVPed to or created
-      const all = getAllEvents();
-      const myEvents = all.filter(e => 
-        e.creatorId === currentUser.id || 
-        e.attendees?.some(a => a.id === currentUser.id || a.email === currentUser.email)
-      );
-      setDayEvents(myEvents);
-    }
-  }, [days, selectedDayOffset, searchLocation, activeTab, currentUser]);
+    const events = await fetchEventsFromApi({
+      date: activeTab === 'search' ? targetDay.dayString : undefined,
+      searchLocation,
+      searchQuery,
+      selectedTab: activeTab,
+      activeUser: currentUser
+    });
+    setDayEvents(events);
+  }, [days, selectedDayOffset, searchLocation, searchQuery, activeTab, currentUser]);
 
   // Run query whenever day pill, search location, active tab, or user changes
   useEffect(() => {
@@ -117,29 +109,34 @@ export default function App() {
     return filterEventsInMemory(dayEvents, searchQuery);
   }, [dayEvents, searchQuery]);
 
-  // Event Action Handlers
+  // Event Action Handlers with Neon API integration
   const handleSaveEvent = async (eventPayload, eventId) => {
     if (eventId) {
-      updateEvent(eventId, eventPayload, currentUser);
+      await updateEventApi({
+        ...eventPayload,
+        id: eventId,
+        userId: currentUser.id
+      });
     } else {
-      createEvent(eventPayload, currentUser);
+      await createEventApi({
+        ...eventPayload,
+        creatorId: currentUser.id
+      });
     }
     refreshDayEvents();
   };
 
-  const handleDeleteEvent = (eventId) => {
-    deleteEvent(eventId, currentUser);
+  const handleDeleteEvent = async (eventId) => {
+    await deleteEventApi(eventId, currentUser.id);
     refreshDayEvents();
   };
 
-  const handleToggleRSVP = (eventId) => {
-    toggleEventRSVP(eventId, currentUser);
+  const handleToggleRSVP = async (eventId) => {
+    const updated = await toggleRsvpApi(eventId, currentUser);
     refreshDayEvents();
     // Update active modal event if open
     setModalState(prev => {
       if (prev.isOpen && prev.event && prev.event.id === eventId) {
-        const all = getAllEvents();
-        const updated = all.find(e => e.id === eventId);
         return { ...prev, event: updated || prev.event };
       }
       return prev;
@@ -246,4 +243,3 @@ export default function App() {
     </div>
   );
 }
-
