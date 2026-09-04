@@ -366,6 +366,10 @@ export async function executeWebMCPTool(toolName, args) {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.__executeWebMCPTool = executeWebMCPTool;
+}
+
 /**
  * Registers WebMCP tools onto navigator.modelContext and window.mcp
  */
