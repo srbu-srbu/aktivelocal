@@ -1,4 +1,4 @@
-// Geography, distance calculation, and location resolvers for aktivelocal
+// Geography, distance calculation, reverse geocoding, and location resolvers for aktivelocal
 
 // Fallback common coordinates database for instant offline/zero-API failure resolution
 export const CITY_COORDINATES = {
@@ -9,6 +9,8 @@ export const CITY_COORDINATES = {
   '98103': { name: 'Seattle, WA (Fremont/Green Lake)', zip: '98103', lat: 47.6734, lng: -122.3426 },
   '98109': { name: 'Seattle, WA (South Lake Union)', zip: '98109', lat: 47.6318, lng: -122.3486 },
   '98004': { name: 'Bellevue, WA', zip: '98004', lat: 47.6101, lng: -122.2015 },
+  'redmond': { name: 'Redmond, WA', zip: '98052', lat: 47.6740, lng: -122.1215 },
+  'kirkland': { name: 'Kirkland, WA', zip: '98033', lat: 47.6769, lng: -122.2060 },
   
   // San Francisco Bay Area
   'san francisco': { name: 'San Francisco, CA', zip: '94102', lat: 37.7749, lng: -122.4194 },
@@ -69,6 +71,120 @@ export function formatDistance(miles) {
 }
 
 /**
+ * Reverse geocodes a latitude & longitude into a human-readable city, state, and zip.
+ */
+export async function reverseGeocode(lat, lng) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`;
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'aktivelocal-events-app/1.0'
+      }
+    });
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.address) {
+        const addr = data.address;
+        const city = addr.city || addr.town || addr.village || addr.suburb || addr.municipality || addr.county || 'Local Area';
+        const state = addr.state_code || addr.state || '';
+        const zip = addr.postcode || 'GPS';
+        const name = state ? `${city}, ${state}` : city;
+        
+        return {
+          name,
+          zip,
+          lat: Number(lat),
+          lng: Number(lng),
+          formattedAddress: data.display_name || name
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('Reverse geocoding error:', err.message);
+  }
+
+  // Fallback: estimate from coordinates or default
+  return {
+    name: 'Current Location',
+    zip: 'GPS',
+    lat: Number(lat),
+    lng: Number(lng)
+  };
+}
+
+/**
+ * Live address & venue autocomplete suggestion search
+ */
+export async function searchAddressSuggestions(query) {
+  if (!query || query.trim().length < 2) return [];
+
+  const cleaned = query.trim();
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleaned)}&limit=5&addressdetails=1`;
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'aktivelocal-events-app/1.0'
+      }
+    });
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        return data.map((item, idx) => {
+          const parts = (item.display_name || '').split(',').map(s => s.trim());
+          const mainText = parts[0] || item.name || cleaned;
+          const secondaryText = parts.slice(1, 4).join(', ');
+
+          return {
+            id: item.place_id || `place-${idx}`,
+            displayName: item.display_name,
+            mainText,
+            secondaryText: secondaryText || mainText,
+            lat: parseFloat(item.lat),
+            lng: parseFloat(item.lon)
+          };
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('Address suggestion search error:', err.message);
+  }
+
+  // Fallback offline suggestions
+  const lower = cleaned.toLowerCase();
+  const matchedOffline = Object.keys(CITY_COORDINATES)
+    .filter(k => k.includes(lower) || CITY_COORDINATES[k].name.toLowerCase().includes(lower))
+    .slice(0, 3)
+    .map((k, idx) => {
+      const c = CITY_COORDINATES[k];
+      return {
+        id: `offline-${idx}`,
+        displayName: c.name,
+        mainText: c.name,
+        secondaryText: `ZIP: ${c.zip}`,
+        lat: c.lat,
+        lng: c.lng
+      };
+    });
+
+  return matchedOffline;
+}
+
+/**
  * Resolves a zip code or city string to coordinates and a display name.
  */
 export async function resolveLocation(query) {
@@ -86,25 +202,38 @@ export async function resolveLocation(query) {
     return CITY_COORDINATES[zipMatch[0]];
   }
 
-  // Attempt online geocoding via OpenStreetMap Nominatim with fast 2s timeout
+  // Attempt online geocoding via OpenStreetMap Nominatim with fast 2.5s timeout
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2500);
     
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
-      { signal: controller.signal, headers: { 'Accept': 'application/json' } }
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&addressdetails=1`,
+      { 
+        signal: controller.signal, 
+        headers: { 
+          'Accept': 'application/json',
+          'User-Agent': 'aktivelocal-events-app/1.0'
+        } 
+      }
     );
     clearTimeout(timeoutId);
     
     if (response.ok) {
       const data = await response.json();
       if (data && data.length > 0) {
+        const item = data[0];
+        const addr = item.address || {};
+        const city = addr.city || addr.town || addr.village || addr.suburb || addr.municipality || addr.county || item.display_name.split(',')[0];
+        const state = addr.state_code || addr.state || '';
+        const name = state ? `${city}, ${state}` : city;
+        const zip = addr.postcode || query.replace(/\D/g, '').slice(0, 5) || 'Local';
+
         return {
-          name: data[0].display_name.split(',').slice(0, 2).join(','),
-          zip: query.replace(/\D/g, '').slice(0, 5) || 'Local',
-          lat: parseFloat(data[0].lat),
-          lng: parseFloat(data[0].lon)
+          name,
+          zip,
+          lat: parseFloat(item.lat),
+          lng: parseFloat(item.lon)
         };
       }
     }
@@ -114,7 +243,7 @@ export async function resolveLocation(query) {
 
   // Safe fallback if not found
   return {
-    name: query.toUpperCase(),
+    name: query.trim(),
     zip: 'Local',
     lat: DEFAULT_SEARCH_LOCATION.lat,
     lng: DEFAULT_SEARCH_LOCATION.lng
@@ -122,7 +251,7 @@ export async function resolveLocation(query) {
 }
 
 /**
- * Browser Geolocation helper with fallback
+ * Browser Geolocation helper with real reverse-geocoded City/State
  */
 export function getUserCurrentLocation() {
   return new Promise((resolve) => {
@@ -132,19 +261,24 @@ export function getUserCurrentLocation() {
     }
 
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        resolve({
-          name: 'Current Location',
-          zip: 'Current GPS',
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude
-        });
+      async (pos) => {
+        try {
+          const geocoded = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+          resolve(geocoded);
+        } catch {
+          resolve({
+            name: 'Current Location',
+            zip: 'GPS',
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude
+          });
+        }
       },
       () => {
         // Fallback if user denies permission
         resolve(DEFAULT_SEARCH_LOCATION);
       },
-      { timeout: 5000 }
+      { timeout: 7000, enableHighAccuracy: true }
     );
   });
 }

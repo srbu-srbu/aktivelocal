@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { MapPin, Navigation, Compass, X } from 'lucide-react';
-import { resolveLocation, getUserCurrentLocation } from '../lib/geo';
+import React, { useState, useEffect, useRef } from 'react';
+import { MapPin, Navigation, Compass, X, Loader2 } from 'lucide-react';
+import { resolveLocation, getUserCurrentLocation, searchAddressSuggestions } from '../lib/geo';
 
 export default function LocationModal({
   isOpen,
@@ -10,6 +10,36 @@ export default function LocationModal({
 }) {
   const [inputVal, setInputVal] = useState('');
   const [loading, setLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSearchingSuggestions, setIsSearchingSuggestions] = useState(false);
+  const suggestionsRef = useRef(null);
+
+  useEffect(() => {
+    if (!inputVal || inputVal.trim().length < 2) {
+      setSuggestions([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearchingSuggestions(true);
+      const results = await searchAddressSuggestions(inputVal);
+      setSuggestions(results);
+      setIsSearchingSuggestions(false);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [inputVal]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   if (!isOpen) return null;
 
@@ -19,6 +49,17 @@ export default function LocationModal({
     const resolved = await resolveLocation(query);
     onLocationSelected(resolved);
     setLoading(false);
+    onClose();
+  };
+
+  const handleSelectSuggestion = (item) => {
+    onLocationSelected({
+      name: item.mainText,
+      zip: item.secondaryText || 'Local',
+      lat: item.lat,
+      lng: item.lng
+    });
+    setShowSuggestions(false);
     onClose();
   };
 
@@ -67,20 +108,31 @@ export default function LocationModal({
           </span>
         </div>
 
-        {/* Form */}
+        {/* Form with Suggestions */}
         <form onSubmit={(e) => { e.preventDefault(); handleApply(inputVal); }} className="space-y-3.5">
-          <div>
+          <div className="relative" ref={suggestionsRef}>
             <label className="text-xs font-semibold text-slate-700 block mb-1.5">
               Enter ZIP Code or City
             </label>
             <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="e.g. 98101, Seattle, Austin..."
-                value={inputVal}
-                onChange={(e) => setInputVal(e.target.value)}
-                className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 transition-all"
-              />
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="e.g. 98101, Seattle, Austin..."
+                  value={inputVal}
+                  onChange={(e) => {
+                    setInputVal(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => {
+                    if (suggestions.length > 0) setShowSuggestions(true);
+                  }}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 transition-all pr-8"
+                />
+                {isSearchingSuggestions && (
+                  <Loader2 className="w-4 h-4 text-cyan-600 animate-spin absolute right-2.5 top-1/2 -translate-y-1/2" />
+                )}
+              </div>
               <button
                 type="submit"
                 disabled={loading || !inputVal.trim()}
@@ -89,6 +141,32 @@ export default function LocationModal({
                 {loading ? '...' : 'Apply'}
               </button>
             </div>
+
+            {/* Suggestions Dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden z-30 max-h-48 overflow-y-auto animate-fade-in">
+                <div className="p-1 space-y-0.5">
+                  {suggestions.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleSelectSuggestion(item)}
+                      className="w-full text-left p-2 rounded-xl hover:bg-cyan-50 transition-colors flex items-start gap-2 group"
+                    >
+                      <MapPin className="w-3.5 h-3.5 text-cyan-600 flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0 flex-1">
+                        <span className="text-xs font-bold text-slate-900 block truncate">
+                          {item.mainText}
+                        </span>
+                        <span className="text-[10px] text-slate-500 block truncate">
+                          {item.secondaryText}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
@@ -128,5 +206,3 @@ export default function LocationModal({
     </div>
   );
 }
-
-
