@@ -302,19 +302,92 @@ export function queryEventsForDay(targetDayString, searchLat, searchLng, maxRadi
 }
 
 /**
- * Client-Side Instant Zero-Latency In-Memory Fuzzy Filter
+ * Client-Side Instant Zero-Latency In-Memory Query & Filter Processor
+ * Supports both:
+ * 1) filterEventsInMemory(eventsList, optionsObject)
+ * 2) filterEventsInMemory(eventsList, "search string")
  */
-export function filterEventsInMemory(eventsList, searchQuery) {
-  if (!searchQuery || !searchQuery.trim()) return eventsList;
-  const q = searchQuery.toLowerCase().trim();
+export function filterEventsInMemory(eventsList, optionsOrQuery) {
+  if (!Array.isArray(eventsList)) return [];
+  if (!optionsOrQuery) return eventsList;
 
-  return eventsList.filter(evt => {
-    const titleMatch = evt.title.toLowerCase().includes(q);
-    const descMatch = (evt.description || '').toLowerCase().includes(q);
-    const locationMatch = (evt.location || '').toLowerCase().includes(q);
-    const creatorMatch = (evt.creatorName || '').toLowerCase().includes(q);
-    return titleMatch || descMatch || locationMatch || creatorMatch;
-  });
+  // Simple string query mode
+  if (typeof optionsOrQuery === 'string') {
+    const q = optionsOrQuery.toLowerCase().trim();
+    if (!q) return eventsList;
+    return eventsList.filter(evt => {
+      const titleMatch = (evt.title || '').toLowerCase().includes(q);
+      const descMatch = (evt.description || '').toLowerCase().includes(q);
+      const locationMatch = (evt.location || evt.locationName || '').toLowerCase().includes(q);
+      const creatorMatch = (evt.creatorName || '').toLowerCase().includes(q);
+      return titleMatch || descMatch || locationMatch || creatorMatch;
+    });
+  }
+
+  // Options object mode
+  const {
+    selectedDate,
+    searchLocation,
+    searchQuery,
+    selectedTab = 'search',
+    activeUser,
+    maxRadiusMiles = 50
+  } = optionsOrQuery;
+
+  let filtered = [...eventsList];
+
+  // 1. Tab-specific filtering
+  if (selectedTab === 'my-events') {
+    if (!activeUser) return [];
+    filtered = filtered.filter(evt => {
+      const isCreator = evt.creatorId === activeUser.id || evt.creator_id === activeUser.id;
+      const isAttendee = Array.isArray(evt.attendees) && evt.attendees.some(a => 
+        a.id === activeUser.id || 
+        (activeUser.email && a.email && a.email.toLowerCase() === activeUser.email.toLowerCase())
+      );
+      return isCreator || isAttendee;
+    });
+  } else if (selectedTab === 'search') {
+    // 2. Date filtering for search tab
+    if (selectedDate) {
+      filtered = filtered.filter(evt => {
+        let evDate = evt.date;
+        if (!evDate && evt.datetime) {
+          try {
+            evDate = new Date(evt.datetime).toISOString().split('T')[0];
+          } catch {
+            evDate = String(evt.datetime).slice(0, 10);
+          }
+        }
+        return evDate === selectedDate;
+      });
+    }
+
+    // 3. Geo radius filtering (50 miles default)
+    if (searchLocation && typeof searchLocation.lat === 'number' && typeof searchLocation.lng === 'number') {
+      filtered = filtered.filter(evt => {
+        const evLat = Number(evt.lat);
+        const evLng = Number(evt.lng);
+        if (isNaN(evLat) || isNaN(evLng)) return true;
+        const dist = calculateDistanceMiles(searchLocation.lat, searchLocation.lng, evLat, evLng);
+        return dist <= maxRadiusMiles;
+      });
+    }
+  }
+
+  // 4. In-memory text search filtering
+  if (searchQuery && typeof searchQuery === 'string' && searchQuery.trim()) {
+    const q = searchQuery.toLowerCase().trim();
+    filtered = filtered.filter(evt => {
+      const titleMatch = (evt.title || '').toLowerCase().includes(q);
+      const descMatch = (evt.description || '').toLowerCase().includes(q);
+      const locationMatch = (evt.location || evt.locationName || '').toLowerCase().includes(q);
+      const creatorMatch = (evt.creatorName || '').toLowerCase().includes(q);
+      return titleMatch || descMatch || locationMatch || creatorMatch;
+    });
+  }
+
+  return filtered;
 }
 
 /**

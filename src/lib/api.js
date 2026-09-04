@@ -12,7 +12,9 @@ import { saveActiveUser } from './userStore';
 export async function fetchEventsFromApi({ date, searchLocation, searchQuery, selectedTab, activeUser }) {
   try {
     const queryParams = new URLSearchParams();
-    if (date) queryParams.append('date', date);
+    if (date && selectedTab === 'search') {
+      queryParams.append('date', date);
+    }
 
     const response = await fetch(`/api/events?${queryParams.toString()}`);
     if (response.ok) {
@@ -21,7 +23,7 @@ export async function fetchEventsFromApi({ date, searchLocation, searchQuery, se
         // Cache to localStorage for instantaneous UI updates
         saveAllEvents(data.events);
         return filterEventsInMemory(data.events, {
-          selectedDate: date,
+          selectedDate: selectedTab === 'search' ? date : undefined,
           searchLocation,
           searchQuery,
           selectedTab,
@@ -36,7 +38,7 @@ export async function fetchEventsFromApi({ date, searchLocation, searchQuery, se
   // Fallback to local store
   const localEvents = getAllEvents();
   return filterEventsInMemory(localEvents, {
-    selectedDate: date,
+    selectedDate: selectedTab === 'search' ? date : undefined,
     searchLocation,
     searchQuery,
     selectedTab,

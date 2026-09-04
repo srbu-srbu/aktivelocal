@@ -200,9 +200,18 @@ export default function EventModal({
       finalLng = resolvedGeo.lng;
     }
 
+    const d = new Date(formData.datetime);
+    const dateStr = !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : formData.datetime.slice(0, 10);
+    const timeStr = !isNaN(d.getTime()) ? d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '6:00 PM';
+    const isoDatetime = !isNaN(d.getTime()) ? d.toISOString() : formData.datetime;
+
     const payload = {
       ...formData,
-      datetime: new Date(formData.datetime).toISOString(),
+      datetime: isoDatetime,
+      date: dateStr,
+      time: timeStr,
+      location: formData.location.trim(),
+      locationName: formData.location.trim(),
       lat: finalLat,
       lng: finalLng
     };

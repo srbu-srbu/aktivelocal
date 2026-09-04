@@ -24,10 +24,20 @@ import { DEFAULT_SEARCH_LOCATION } from './lib/geo';
 import { initializeWebMCP } from './lib/webmcp';
 
 const STORAGE_KEY_SEARCH_LOC = 'aktivelocal_search_loc_v1';
+const STORAGE_KEY_ACTIVE_TAB = 'aktivelocal_active_tab_v1';
+const STORAGE_KEY_DAY_OFFSET = 'aktivelocal_day_offset_v1';
 
 export default function App() {
-  // Navigation State
-  const [activeTab, setActiveTab] = useState('search'); // 'search' | 'my-events'
+  // Navigation State with Session Persistence
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY_ACTIVE_TAB);
+      if (saved === 'search' || saved === 'my-events') return saved;
+    } catch {
+      // ignore
+    }
+    return 'search';
+  });
   
   // User Profile & First-Time Onboarding State
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(() => !hasStoredUser());
@@ -47,7 +57,37 @@ export default function App() {
 
   // Dynamic 7-Day Horizon
   const days = useMemo(() => generateSevenDays(), []);
-  const [selectedDayOffset, setSelectedDayOffset] = useState(0);
+  const [selectedDayOffset, setSelectedDayOffset] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY_DAY_OFFSET);
+      if (saved !== null) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= 0 && parsed < 7) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+    return 0;
+  });
+
+  // Tab & Day Offset Handlers with Session Storage Sync
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+    try {
+      sessionStorage.setItem(STORAGE_KEY_ACTIVE_TAB, newTab);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDayOffsetChange = (newOffset) => {
+    setSelectedDayOffset(newOffset);
+    try {
+      sessionStorage.setItem(STORAGE_KEY_DAY_OFFSET, String(newOffset));
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // Search Bar Query (0ms instant in-memory filtering)
   const [searchQuery, setSearchQuery] = useState('');
@@ -120,10 +160,22 @@ export default function App() {
         userId: currentUser.id
       });
     } else {
-      await createEventApi({
+      const created = await createEventApi({
         ...eventPayload,
-        creatorId: currentUser.id
+        creatorId: currentUser.id,
+        creatorName: currentUser.displayName
       });
+
+      // If user created an event for a specific day in the 7-day horizon, switch to that day pill
+      if (created) {
+        const evDate = created.date || (created.datetime ? new Date(created.datetime).toISOString().split('T')[0] : null);
+        if (evDate) {
+          const foundIndex = days.findIndex(d => d.dayString === evDate);
+          if (foundIndex !== -1 && activeTab === 'search') {
+            handleDayOffsetChange(foundIndex);
+          }
+        }
+      }
     }
     refreshDayEvents();
   };
@@ -154,7 +206,7 @@ export default function App() {
       {/* 1. Header (Logo, Segmented Tabs, Profile Trigger) */}
       <Header
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         currentUser={currentUser}
         onOpenProfile={() => setIsProfileOpen(true)}
       />
@@ -177,7 +229,7 @@ export default function App() {
           <DayPills
             days={days}
             selectedDayOffset={selectedDayOffset}
-            onSelectDay={setSelectedDayOffset}
+            onSelectDay={handleDayOffsetChange}
           />
         )}
 
@@ -225,6 +277,12 @@ export default function App() {
           refreshDayEvents();
         }}
         onResetSession={() => {
+          try {
+            sessionStorage.removeItem(STORAGE_KEY_ACTIVE_TAB);
+            sessionStorage.removeItem(STORAGE_KEY_DAY_OFFSET);
+          } catch {}
+          setActiveTab('search');
+          setSelectedDayOffset(0);
           setIsOnboardingOpen(true);
         }}
       />
