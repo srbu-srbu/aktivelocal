@@ -11,6 +11,11 @@ export const WEBMCP_TOOLS = [
   {
     name: 'get_active_profile',
     description: 'Retrieves the active user profile including email, display name, and permanent location.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      required: []
+    },
     parameters: {
       type: 'object',
       properties: {},
@@ -20,6 +25,15 @@ export const WEBMCP_TOOLS = [
   {
     name: 'search_events',
     description: 'Searches local events within a 50-mile radius for a given date and query string.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search term or keyword (e.g., "yoga", "run", "coffee")' },
+        date: { type: 'string', description: 'ISO date string or YYYY-MM-DD for the target day' },
+        radius_miles: { type: 'number', description: 'Maximum radius in miles (default 50)' }
+      },
+      required: ['date']
+    },
     parameters: {
       type: 'object',
       properties: {
@@ -33,6 +47,13 @@ export const WEBMCP_TOOLS = [
   {
     name: 'get_event_details',
     description: 'Fetches complete details, description, venue, and attendee list for a specific event ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        event_id: { type: 'string', description: 'The unique event ID (e.g. "evt-001")' }
+      },
+      required: ['event_id']
+    },
     parameters: {
       type: 'object',
       properties: {
@@ -44,6 +65,17 @@ export const WEBMCP_TOOLS = [
   {
     name: 'create_event',
     description: 'Creates a single atomic local event on aktivelocal.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'Event title' },
+        datetime: { type: 'string', description: 'ISO-8601 start date and time' },
+        location: { type: 'string', description: 'Venue name and address' },
+        description: { type: 'string', description: 'Details and agenda for the event' },
+        duration_minutes: { type: 'number', description: 'Duration in minutes (default 60)' }
+      },
+      required: ['title', 'datetime', 'location']
+    },
     parameters: {
       type: 'object',
       properties: {
@@ -59,6 +91,14 @@ export const WEBMCP_TOOLS = [
   {
     name: 'rsvp_event',
     description: 'RSVPs or cancels RSVP for the active user to a specific event.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        event_id: { type: 'string', description: 'Event ID to RSVP to' },
+        action: { type: 'string', enum: ['rsvp', 'cancel'], description: 'Action to perform' }
+      },
+      required: ['event_id']
+    },
     parameters: {
       type: 'object',
       properties: {
@@ -71,6 +111,19 @@ export const WEBMCP_TOOLS = [
   {
     name: 'create_recurring_series',
     description: 'Autonomous Agent Superpower: Synthesizes a weekly recurring event series across multiple weeks using atomic event creation tools.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'Base title of recurring series' },
+        day_offset_start: { type: 'number', description: 'Day offset from today to start (0 = today, 1 = tomorrow)' },
+        hour: { type: 'number', description: 'Hour of the day in 24h format (e.g. 18 for 6 PM)' },
+        minute: { type: 'number', description: 'Minute of the hour (e.g. 30)' },
+        weeks_count: { type: 'number', description: 'Number of consecutive weeks to schedule (e.g. 4 or 6)' },
+        location: { type: 'string', description: 'Venue name and address' },
+        description: { type: 'string', description: 'Event description' }
+      },
+      required: ['title', 'day_offset_start', 'hour', 'weeks_count', 'location']
+    },
     parameters: {
       type: 'object',
       properties: {
@@ -88,6 +141,15 @@ export const WEBMCP_TOOLS = [
   {
     name: 'plan_weekend_itinerary',
     description: 'Autonomous Agent Superpower: Discovers events for Saturday/Sunday, balances morning/afternoon/evening slots, checks distance, and auto-RSVPs.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        target_weekend_day_offset: { type: 'number', description: 'Day offset for weekend (e.g., 2 for Saturday, 3 for Sunday)' },
+        vibes: { type: 'array', items: { type: 'string' }, description: 'Desired vibes (e.g. ["active", "social", "food"])' },
+        auto_rsvp: { type: 'boolean', description: 'Whether to automatically RSVP the active user' }
+      },
+      required: ['target_weekend_day_offset']
+    },
     parameters: {
       type: 'object',
       properties: {
@@ -323,18 +385,54 @@ export function initializeWebMCP() {
     window.mcp = mcpProvider;
     
     if (typeof navigator !== 'undefined') {
-      try {
-        Object.defineProperty(navigator, 'modelContext', {
-          value: mcpProvider,
-          writable: true,
-          configurable: true,
-          enumerable: true
+      // 1. Native W3C WebMCP Browser API (ChatGPT in-app browser / Chrome 146+ Canary)
+      if (typeof navigator.modelContext?.registerTool === 'function') {
+        WEBMCP_TOOLS.forEach(tool => {
+          try {
+            navigator.modelContext.registerTool(
+              {
+                name: tool.name,
+                description: tool.description,
+                inputSchema: tool.inputSchema || tool.parameters
+              },
+              async (params) => {
+                return await executeWebMCPTool(tool.name, params);
+              }
+            );
+          } catch (err) {
+            console.warn(`[WebMCP] Native registerTool error for ${tool.name}:`, err);
+          }
         });
-      } catch {
+        console.log('⚡ [WebMCP] Successfully registered 7 tools via native navigator.modelContext.registerTool()');
+      } else if (typeof navigator.modelContext?.provideContext === 'function') {
         try {
-          navigator.modelContext = mcpProvider;
+          navigator.modelContext.provideContext({
+            tools: WEBMCP_TOOLS.map(tool => ({
+              name: tool.name,
+              description: tool.description,
+              inputSchema: tool.inputSchema || tool.parameters,
+              execute: async (params) => executeWebMCPTool(tool.name, params)
+            }))
+          });
+          console.log('⚡ [WebMCP] Successfully registered tools via navigator.modelContext.provideContext()');
+        } catch (e) {
+          console.warn('[WebMCP] provideContext error:', e);
+        }
+      } else {
+        // 2. Fallback provider object on navigator.modelContext
+        try {
+          Object.defineProperty(navigator, 'modelContext', {
+            value: mcpProvider,
+            writable: true,
+            configurable: true,
+            enumerable: true
+          });
         } catch {
-          // ignore
+          try {
+            navigator.modelContext = mcpProvider;
+          } catch {
+            // ignore
+          }
         }
       }
     }
