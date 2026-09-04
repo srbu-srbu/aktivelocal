@@ -88,7 +88,7 @@ export default function ProfileDrawer({
       onUserChanged(updated);
       setIsEditing(false);
       setShowAvatarPicker(false);
-      setAuthMessage({ type: 'success', text: 'Profile saved & synced to Neon Postgres!' });
+      setAuthMessage({ type: 'success', text: 'Profile saved successfully!' });
     } catch (err) {
       setAuthMessage({ type: 'error', text: err.message || 'Failed to save profile' });
     } finally {
@@ -106,7 +106,7 @@ export default function ProfileDrawer({
       onUserChanged(user);
       setIsEmailSignIn(false);
       setLoginEmail('');
-      setAuthMessage({ type: 'success', text: `Signed in as ${user.displayName || user.email} via Neon Postgres!` });
+      setAuthMessage({ type: 'success', text: `Signed in as ${user.displayName || user.email}!` });
     } catch (err) {
       setAuthMessage({ type: 'error', text: err.message || 'Error authenticating user' });
     } finally {
@@ -156,7 +156,7 @@ export default function ProfileDrawer({
             <h2 className="text-base font-bold text-slate-900">User Identity</h2>
             <span className="text-[10px] font-bold text-cyan-700 bg-cyan-50 px-2.5 py-0.5 rounded-full border border-cyan-200 flex items-center gap-1">
               <Database className="w-2.5 h-2.5 text-cyan-600" />
-              <span>Neon Postgres</span>
+              <span>Connected</span>
             </span>
           </div>
           <button
@@ -274,7 +274,7 @@ export default function ProfileDrawer({
                 </button>
               </div>
               <p className="text-[11px] text-slate-600 leading-tight">
-                Enter your email address to sync your identity & created events with Neon Postgres.
+                Enter your email address to sync your identity & created events.
               </p>
               <div>
                 <input
@@ -422,7 +422,7 @@ export default function ProfileDrawer({
                   className="flex-1 py-1.5 bg-cyan-600 text-white rounded-xl text-xs font-bold hover:bg-cyan-500 shadow-md shadow-cyan-600/20 disabled:opacity-50 flex items-center justify-center gap-1"
                 >
                   {isLoadingAuth && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Save to Neon</span>
+                  <span>Save</span>
                 </button>
               </div>
             </form>

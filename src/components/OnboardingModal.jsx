@@ -199,7 +199,7 @@ export default function OnboardingModal({
                   <span>Returning Member</span>
                 </div>
                 <p className="text-xs text-slate-500 leading-tight">
-                  Enter your email to instantly load your account from Neon Postgres:
+                  Enter your email to load your profile and hosted events:
                 </p>
                 <form onSubmit={handleReturningUserSubmit} className="space-y-2">
                   <div className="flex gap-2">
