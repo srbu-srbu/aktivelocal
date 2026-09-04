@@ -99,6 +99,17 @@ export function saveActiveUser(user) {
 }
 
 /**
+ * Clears active user from localStorage
+ */
+export function clearActiveUser() {
+  try {
+    localStorage.removeItem(STORAGE_KEY_USER);
+  } catch (err) {
+    console.error('Failed to clear user:', err);
+  }
+}
+
+/**
  * Updates specific fields on the current active user
  */
 export function updateActiveUserProfile(updates) {

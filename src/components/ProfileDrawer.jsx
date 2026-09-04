@@ -19,7 +19,8 @@ import {
   getRandomAvatarSeed,
   AVATAR_PRESETS,
   PRESET_PERSONAS, 
-  saveActiveUser 
+  saveActiveUser,
+  clearActiveUser 
 } from '../lib/userStore';
 import { authenticateWithEmail } from '../lib/api';
 
@@ -27,7 +28,8 @@ export default function ProfileDrawer({
   isOpen,
   onClose,
   currentUser,
-  onUserChanged
+  onUserChanged,
+  onResetSession
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isEmailSignIn, setIsEmailSignIn] = useState(false);
@@ -124,13 +126,14 @@ export default function ProfileDrawer({
   };
 
   const handleLogout = () => {
-    const judge = PRESET_PERSONAS[1];
-    saveActiveUser(judge);
-    onUserChanged(judge);
+    clearActiveUser();
     setIsEditing(false);
     setIsEmailSignIn(false);
     setShowAvatarPicker(false);
     onClose();
+    if (onResetSession) {
+      onResetSession();
+    }
   };
 
   return (
@@ -439,7 +442,7 @@ export default function ProfileDrawer({
             className="w-full py-2.5 px-4 bg-white hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-xl text-xs font-semibold transition-all border border-slate-200 hover:border-red-200 flex items-center justify-center gap-2 shadow-sm"
           >
             <LogOut className="w-3.5 h-3.5" />
-            <span>Reset Session / Switch to Judge</span>
+            <span>Sign Out & Reset Profile</span>
           </button>
         </div>
 

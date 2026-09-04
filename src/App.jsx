@@ -224,6 +224,9 @@ export default function App() {
           setCurrentUser(updated);
           refreshDayEvents();
         }}
+        onResetSession={() => {
+          setIsOnboardingOpen(true);
+        }}
       />
 
       {/* 4. Event Modal (Read / Create / Edit) */}
