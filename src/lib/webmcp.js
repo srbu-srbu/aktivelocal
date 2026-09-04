@@ -1,7 +1,8 @@
 // WebMCP (Model Context Protocol) Browser Integration for aktivelocal
-import { getAllEvents, createEvent, toggleEventRSVP, queryEventsForDay } from './eventStore';
+import { getAllEvents, queryEventsForDay } from './eventStore';
 import { getActiveUser } from './userStore';
 import { resolveLocation } from './geo';
+import { createEventApi, toggleRsvpApi } from './api';
 
 /**
  * WebMCP Tool Definitions (Compliant with standard MCP Tool Schema)
@@ -160,22 +161,38 @@ export async function executeWebMCPTool(toolName, args) {
 
       case 'create_event': {
         const geo = await resolveLocation(args.location);
-        const newEvt = createEvent({
+        const d = new Date(args.datetime);
+        const dateStr = !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : args.datetime.slice(0, 10);
+        const timeStr = !isNaN(d.getTime()) ? d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '6:00 PM';
+        const isoDatetime = !isNaN(d.getTime()) ? d.toISOString() : args.datetime;
+
+        const newEvt = await createEventApi({
           title: args.title,
           description: args.description || '',
-          datetime: args.datetime,
+          datetime: isoDatetime,
+          date: dateStr,
+          time: timeStr,
           durationMinutes: args.duration_minutes || 60,
           location: args.location,
+          locationName: args.location,
           lat: geo.lat,
-          lng: geo.lng
-        }, currentUser);
+          lng: geo.lng,
+          creatorId: currentUser.id,
+          creatorName: currentUser.displayName
+        });
         result = { success: true, event: newEvt };
         break;
       }
 
       case 'rsvp_event': {
-        const { event, isRSVPed } = toggleEventRSVP(args.event_id, currentUser);
-        result = { success: true, event_id: args.event_id, rsvp_status: isRSVPed ? 'RSVP_CONFIRMED' : 'RSVP_CANCELLED', total_attendees: event.attendees.length };
+        const updated = await toggleRsvpApi(args.event_id, currentUser);
+        const isRSVPed = updated?.attendees?.some(a => a.id === currentUser.id);
+        result = { 
+          success: true, 
+          event_id: args.event_id, 
+          rsvp_status: isRSVPed ? 'RSVP_CONFIRMED' : 'RSVP_CANCELLED', 
+          total_attendees: updated?.attendees?.length || 0 
+        };
         break;
       }
 
@@ -191,17 +208,26 @@ export async function executeWebMCPTool(toolName, args) {
           d.setDate(d.getDate() + (args.day_offset_start || 0) + (i * 7));
           d.setHours(args.hour || 18, args.minute || 0, 0, 0);
 
-          const evt = createEvent({
+          const dateStr = d.toISOString().split('T')[0];
+          const timeStr = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+          const isoDatetime = d.toISOString();
+
+          const evt = await createEventApi({
             title: `${args.title} (Week ${i + 1}/${count})`,
             description: args.description || `Weekly community meetup — Week ${i + 1} of ${count}.`,
-            datetime: d.toISOString(),
+            datetime: isoDatetime,
+            date: dateStr,
+            time: timeStr,
             durationMinutes: 75,
             location: args.location,
+            locationName: args.location,
             lat: geo.lat,
             lng: geo.lng,
+            creatorId: currentUser.id,
+            creatorName: currentUser.displayName,
             isRecurring: true,
             seriesTag
-          }, currentUser);
+          });
           createdSeries.push(evt);
         }
 
@@ -227,9 +253,9 @@ export async function executeWebMCPTool(toolName, args) {
         const selected = dayEvents.slice(0, 2);
         
         if (args.auto_rsvp && selected.length > 0) {
-          selected.forEach(evt => {
-            toggleEventRSVP(evt.id, currentUser);
-          });
+          for (const evt of selected) {
+            await toggleRsvpApi(evt.id, currentUser);
+          }
         }
 
         result = {

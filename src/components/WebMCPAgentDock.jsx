@@ -41,8 +41,8 @@ export default function WebMCPAgentDock() {
           hour: 18,
           minute: 30,
           weeks_count: 4,
-          location: 'Olympic Sculpture Park, 2901 Western Ave, Seattle, WA',
-          description: 'Weekly 5K sunset run around the waterfront followed by casual refreshments.'
+          location: 'Santa Clara Central Park, 909 Kiely Blvd, Santa Clara, CA',
+          description: 'Weekly 5K sunset run around the park followed by casual refreshments.'
         });
       } else if (scenarioKey === 'weekend') {
         await executeWebMCPTool('plan_weekend_itinerary', {
@@ -52,7 +52,7 @@ export default function WebMCPAgentDock() {
         });
       } else if (scenarioKey === 'search_mcp') {
         await executeWebMCPTool('search_events', {
-          query: 'social',
+          query: 'run',
           date: new Date().toISOString(),
           radius_miles: 50
         });
@@ -190,6 +190,27 @@ export default function WebMCPAgentDock() {
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1 pl-6">
                   Queries 50-mi radius, optimizes morning/evening slots, and executes autonomous RSVPs.
+                </p>
+              </button>
+
+              {/* Scenario 3: MCP Search & Inspection */}
+              <button
+                type="button"
+                disabled={isExecuting}
+                onClick={() => handleRunScenario('search_mcp')}
+                className="text-left p-3 rounded-2xl bg-white border border-slate-200 hover:border-cyan-400 hover:bg-slate-50 transition-all text-xs group disabled:opacity-50 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900 group-hover:text-cyan-700 flex items-center gap-2">
+                    <Search className="w-4 h-4 text-cyan-600" />
+                    <span>Autonomous 50-Mile Radius Discovery</span>
+                  </span>
+                  <span className="text-[11px] text-cyan-600 font-mono font-semibold flex items-center gap-0.5">
+                    <Play className="w-3 h-3 fill-cyan-600" />
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1 pl-6">
+                  Calls search_events with coordinates & radius filters via JSON-RPC.
                 </p>
               </button>
             </div>
