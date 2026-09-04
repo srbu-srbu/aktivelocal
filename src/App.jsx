@@ -188,7 +188,7 @@ export default function App() {
               </div>
               <div>
                 <h2 className="text-sm font-bold text-slate-900">
-                  My RSVPs & Hosted Gatherings
+                  My RSVPs & Hosted Events
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Showing events for <strong className="text-orange-600">{currentUser.displayName}</strong>

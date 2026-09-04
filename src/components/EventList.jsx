@@ -13,15 +13,17 @@ export default function EventList({
   return (
     <div className="space-y-3.5">
       
-      {/* Top Card is ALWAYS '+ Create Event' */}
-      <button
-        type="button"
-        onClick={onCreateEventClick}
-        className="w-full group relative bg-white hover:bg-slate-50/90 border-2 border-dashed border-slate-300 hover:border-cyan-500 rounded-2xl p-4 flex items-center justify-center gap-2.5 text-slate-700 hover:text-cyan-700 font-bold text-sm transition-all duration-200 shadow-sm"
-      >
-        <PlusCircle className="w-5 h-5 text-cyan-600 group-hover:scale-110 transition-transform" />
-        <span>Create New Gathering</span>
-      </button>
+      {/* Top Card '+ Create Event' (Search Tab only) */}
+      {activeTab === 'search' && (
+        <button
+          type="button"
+          onClick={onCreateEventClick}
+          className="w-full group relative bg-white hover:bg-slate-50/90 border-2 border-dashed border-slate-300 hover:border-cyan-500 rounded-2xl p-4 flex items-center justify-center gap-2.5 text-slate-700 hover:text-cyan-700 font-bold text-sm transition-all duration-200 shadow-sm"
+        >
+          <PlusCircle className="w-5 h-5 text-cyan-600 group-hover:scale-110 transition-transform" />
+          <span>Create New Event</span>
+        </button>
+      )}
 
       {/* List of Event Results */}
       {events.length > 0 ? (
