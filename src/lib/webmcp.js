@@ -50,8 +50,7 @@ export const WEBMCP_TOOLS = [
         datetime: { type: 'string', description: 'ISO-8601 start date and time' },
         location: { type: 'string', description: 'Venue name and address' },
         description: { type: 'string', description: 'Details and agenda for the event' },
-        duration_minutes: { type: 'number', description: 'Duration in minutes (default 60)' },
-        category: { type: 'string', description: 'Category pill (e.g., Outdoors, Tech, Social, Wellness)' }
+        duration_minutes: { type: 'number', description: 'Duration in minutes (default 60)' }
       },
       required: ['title', 'datetime', 'location']
     }
@@ -80,8 +79,7 @@ export const WEBMCP_TOOLS = [
         minute: { type: 'number', description: 'Minute of the hour (e.g. 30)' },
         weeks_count: { type: 'number', description: 'Number of consecutive weeks to schedule (e.g. 4 or 6)' },
         location: { type: 'string', description: 'Venue name and address' },
-        description: { type: 'string', description: 'Event description' },
-        category: { type: 'string', description: 'Category name' }
+        description: { type: 'string', description: 'Event description' }
       },
       required: ['title', 'day_offset_start', 'hour', 'weeks_count', 'location']
     }
@@ -169,8 +167,7 @@ export async function executeWebMCPTool(toolName, args) {
           durationMinutes: args.duration_minutes || 60,
           location: args.location,
           lat: geo.lat,
-          lng: geo.lng,
-          category: args.category || 'Gathering'
+          lng: geo.lng
         }, currentUser);
         result = { success: true, event: newEvt };
         break;
@@ -202,7 +199,6 @@ export async function executeWebMCPTool(toolName, args) {
             location: args.location,
             lat: geo.lat,
             lng: geo.lng,
-            category: args.category || 'Recurring Fitness',
             isRecurring: true,
             seriesTag
           }, currentUser);

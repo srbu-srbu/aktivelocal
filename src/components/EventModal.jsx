@@ -38,8 +38,7 @@ export default function EventModal({
     datetime: '',
     location: '',
     description: '',
-    durationMinutes: 60,
-    category: 'Fitness & Outdoors'
+    durationMinutes: 60
   });
 
   useEffect(() => {
@@ -61,8 +60,7 @@ export default function EventModal({
         datetime: localDt,
         location: event.location || '',
         description: event.description || '',
-        durationMinutes: event.durationMinutes || 60,
-        category: event.category || 'Fitness & Outdoors'
+        durationMinutes: event.durationMinutes || 60
       });
     } else if (mode === 'create') {
       const tomorrow = new Date();
@@ -76,8 +74,7 @@ export default function EventModal({
         datetime: defaultDt,
         location: searchLocation.name || 'Seattle, WA',
         description: '',
-        durationMinutes: 60,
-        category: 'Fitness & Outdoors'
+        durationMinutes: 60
       });
     }
   }, [mode, event, isOpen, searchLocation]);
@@ -165,19 +162,16 @@ export default function EventModal({
           {currentMode === 'read' && event && (
             <div className="space-y-4">
               
-              {/* Top Banner Category & Title */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full border bg-cyan-50 text-cyan-800 border-cyan-200">
-                    {event.category || 'Gathering'}
-                  </span>
-                  {event.isRecurring && (
-                    <span className="flex items-center gap-1 text-[10px] font-semibold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200">
+              {/* Top Title & Recurring tag */}
+              <div className="space-y-1.5">
+                {event.isRecurring && (
+                  <div>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full border border-indigo-200">
                       <Repeat className="w-2.5 h-2.5" />
                       <span>Recurring Series</span>
                     </span>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 <h2 className="text-xl font-extrabold text-slate-900 tracking-tight leading-snug">
                   {event.title}
@@ -297,38 +291,19 @@ export default function EventModal({
                 />
               </div>
 
-              {/* 2. Category & Duration */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
-                    Category
-                  </label>
-                  <select
-                    value={formData.category}
-                    onChange={e => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-cyan-500 transition-all"
-                  >
-                    <option value="Fitness & Outdoors">Fitness & Outdoors</option>
-                    <option value="Social & Drinks">Social & Drinks</option>
-                    <option value="Tech & Builders">Tech & Builders</option>
-                    <option value="Arts & Culture">Arts & Culture</option>
-                    <option value="Community">Community</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
-                    Duration (Minutes)
-                  </label>
-                  <input
-                    type="number"
-                    min="15"
-                    step="15"
-                    value={formData.durationMinutes}
-                    onChange={e => setFormData({ ...formData, durationMinutes: Number(e.target.value) })}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-cyan-500 transition-all"
-                  />
-                </div>
+              {/* 2. Duration */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
+                  Duration (Minutes)
+                </label>
+                <input
+                  type="number"
+                  min="15"
+                  step="15"
+                  value={formData.durationMinutes}
+                  onChange={e => setFormData({ ...formData, durationMinutes: Number(e.target.value) })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-cyan-500 transition-all"
+                />
               </div>
 
               {/* 3. Date & Time */}

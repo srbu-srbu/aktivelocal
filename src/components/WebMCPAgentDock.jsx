@@ -42,8 +42,7 @@ export default function WebMCPAgentDock() {
           minute: 30,
           weeks_count: 4,
           location: 'Olympic Sculpture Park, 2901 Western Ave, Seattle, WA',
-          description: 'Weekly 5K sunset run around the waterfront followed by casual refreshments.',
-          category: 'Fitness & Outdoors'
+          description: 'Weekly 5K sunset run around the waterfront followed by casual refreshments.'
         });
       } else if (scenarioKey === 'weekend') {
         await executeWebMCPTool('plan_weekend_itinerary', {

@@ -30,7 +30,6 @@ export const INITIAL_SEED_EVENTS = [
     location: 'Olympic Sculpture Park, 2901 Western Ave, Seattle, WA',
     lat: 47.6166,
     lng: -122.3553,
-    category: 'Fitness & Outdoors',
     attendees: [
       { id: 'user-02', displayName: 'Marcus Vance', email: 'marcus@example.com', avatarSeed: 'marcus' },
       { id: 'user-03', displayName: 'Elena Rostova', email: 'elena@example.com', avatarSeed: 'elena' },
@@ -50,7 +49,6 @@ export const INITIAL_SEED_EVENTS = [
     location: 'Victrola Coffee Roasters, 300 Pine St, Seattle, WA',
     lat: 47.6115,
     lng: -122.3364,
-    category: 'Tech & Social',
     attendees: [
       { id: 'user-07', displayName: 'Jason Wu', email: 'jason@example.com', avatarSeed: 'jason' },
       { id: 'user-08', displayName: 'Sarah Jenkins', email: 'sarah@example.com', avatarSeed: 'sarah' }
@@ -67,7 +65,6 @@ export const INITIAL_SEED_EVENTS = [
     location: 'Seattle Bouldering Project, 900 Poplar Pl S, Seattle, WA',
     lat: 47.5936,
     lng: -122.3168,
-    category: 'Active & Sports',
     attendees: [
       { id: 'user-09', displayName: 'Travis Scott', email: 'travis@example.com', avatarSeed: 'travis' },
       { id: 'user-10', displayName: 'Maya Lin', email: 'maya@example.com', avatarSeed: 'maya' },
@@ -87,7 +84,6 @@ export const INITIAL_SEED_EVENTS = [
     location: 'Schilling Cider House, 708 N 34th St, Seattle, WA',
     lat: 47.6499,
     lng: -122.3497,
-    category: 'Social & Fun',
     attendees: [
       { id: 'user-12', displayName: 'Zack Taylor', email: 'zack@example.com', avatarSeed: 'zack' },
       { id: 'user-13', displayName: 'Hannah Schmidt', email: 'hannah@example.com', avatarSeed: 'hannah' },
@@ -106,7 +102,6 @@ export const INITIAL_SEED_EVENTS = [
     location: 'Alki Beach Park, 1702 Alki Ave SW, Seattle, WA',
     lat: 47.5815,
     lng: -122.4055,
-    category: 'Wellness',
     attendees: [
       { id: 'user-16', displayName: 'Emma Watson', email: 'emma@example.com', avatarSeed: 'emma' },
       { id: 'user-17', displayName: 'Olivia Perez', email: 'olivia@example.com', avatarSeed: 'olivia' }
@@ -125,7 +120,6 @@ export const INITIAL_SEED_EVENTS = [
     location: 'Ballard Ave NW, 5300 Ballard Ave NW, Seattle, WA',
     lat: 47.6669,
     lng: -122.3831,
-    category: 'Food & Community',
     attendees: [
       { id: 'user-18', displayName: 'Lucas Silva', email: 'lucas@example.com', avatarSeed: 'lucas' },
       { id: 'user-19', displayName: 'Sophie Martin', email: 'sophie@example.com', avatarSeed: 'sophie' },
@@ -144,7 +138,6 @@ export const INITIAL_SEED_EVENTS = [
     location: 'Discovery Park Visitor Center, 3801 Discovery Park Blvd, Seattle, WA',
     lat: 47.6575,
     lng: -122.4057,
-    category: 'Fitness & Outdoors',
     attendees: [
       { id: 'user-22', displayName: 'Brandon Lee', email: 'brandon@example.com', avatarSeed: 'brandon' },
       { id: 'user-23', displayName: 'Valerie Adams', email: 'valerie@example.com', avatarSeed: 'valerie' },
@@ -162,7 +155,6 @@ export const INITIAL_SEED_EVENTS = [
     location: 'Life on Mars, 722 E Pike St, Seattle, WA',
     lat: 47.6141,
     lng: -122.3223,
-    category: 'Music & Arts',
     attendees: [
       { id: 'user-25', displayName: 'Nico Bellic', email: 'nico@example.com', avatarSeed: 'nico' },
       { id: 'user-26', displayName: 'Camille Dupont', email: 'camille@example.com', avatarSeed: 'camille' }
@@ -181,7 +173,6 @@ export const INITIAL_SEED_EVENTS = [
     location: 'Green Lake East Beach, 7201 E Green Lake Dr N, Seattle, WA',
     lat: 47.6812,
     lng: -122.3312,
-    category: 'Active & Sports',
     attendees: [
       { id: 'user-27', displayName: 'Daniel Craig', email: 'daniel@example.com', avatarSeed: 'daniel' },
       { id: 'user-28', displayName: 'Rachel Green', email: 'rachel@example.com', avatarSeed: 'rachel' },
@@ -199,7 +190,6 @@ export const INITIAL_SEED_EVENTS = [
     location: 'Saltstone Ceramics, 2205 N 45th St, Seattle, WA',
     lat: 47.6611,
     lng: -122.3308,
-    category: 'Creative Arts',
     attendees: [
       { id: 'user-30', displayName: 'Alice Young', email: 'alice@example.com', avatarSeed: 'alice' },
       { id: 'user-31', displayName: 'Gabe Newell', email: 'gabe@example.com', avatarSeed: 'gabe' }
@@ -218,7 +208,6 @@ export const INITIAL_SEED_EVENTS = [
     location: 'Rhein Haus, 912 12th Ave, Seattle, WA',
     lat: 47.6111,
     lng: -122.3168,
-    category: 'Social & Fun',
     attendees: [
       { id: 'user-32', displayName: 'Penny Hofstadter', email: 'penny@example.com', avatarSeed: 'penny' },
       { id: 'user-33', displayName: 'Leonard Leakey', email: 'leonard@example.com', avatarSeed: 'leonard' }
@@ -237,7 +226,6 @@ export const INITIAL_SEED_EVENTS = [
     location: 'Amazon Doppler, 2021 7th Ave, Seattle, WA',
     lat: 47.6154,
     lng: -122.3387,
-    category: 'Tech & Builders',
     attendees: [
       { id: 'user-34', displayName: 'Geoffrey Hinton', email: 'geoff@example.com', avatarSeed: 'geoff' },
       { id: 'user-35', displayName: 'Andrej Karpathy', email: 'andrej@example.com', avatarSeed: 'andrej' },
@@ -257,7 +245,6 @@ export const INITIAL_SEED_EVENTS = [
     location: 'Pike Place Market Clock, 85 Pike St, Seattle, WA',
     lat: 47.6097,
     lng: -122.3422,
-    category: 'Food & Community',
     attendees: [
       { id: 'user-37', displayName: 'Gordon Ramsay', email: 'gordon@example.com', avatarSeed: 'gordon' },
       { id: 'user-38', displayName: 'Matty Matheson', email: 'matty@example.com', avatarSeed: 'matty' }
@@ -278,45 +265,40 @@ export function getAllEvents() {
       }
     }
   } catch (err) {
-    console.error('Error loading events from storage:', err);
+    console.error('Error reading localStorage events:', err);
   }
 
-  // Seed initial events
+  // First run seeding
   saveAllEvents(INITIAL_SEED_EVENTS);
   return INITIAL_SEED_EVENTS;
 }
 
 /**
- * Saves all events to localStorage
+ * Saves all events array to localStorage
  */
 export function saveAllEvents(events) {
   try {
     localStorage.setItem(STORAGE_KEY_EVENTS, JSON.stringify(events));
   } catch (err) {
-    console.error('Failed to save events:', err);
+    console.error('Error saving events to localStorage:', err);
   }
 }
 
 /**
- * Database Query: Fetches events within 50-mile radius for a specific target day
+ * Queries events for a given target Day String (YYYY-MM-DD) within maxRadiusMiles
  */
-export function queryEventsForDay(targetDateString, searchLat, searchLng, maxRadiusMiles = 50) {
-  const all = getAllEvents();
+export function queryEventsForDay(targetDayString, searchLat, searchLng, maxRadiusMiles = 50) {
+  const allEvents = getAllEvents();
   
-  // Format target date as YYYY-MM-DD
-  const targetDay = targetDateString.split('T')[0];
+  return allEvents.filter(event => {
+    // 1. Match day string
+    const eventDayStr = new Date(event.datetime).toISOString().split('T')[0];
+    if (eventDayStr !== targetDayString) return false;
 
-  const results = all.filter(evt => {
-    const evtDay = evt.datetime.split('T')[0];
-    if (evtDay !== targetDay) return false;
-
-    // Check distance radius
-    const distance = calculateDistanceMiles(searchLat, searchLng, evt.lat, evt.lng);
+    // 2. Check 50-mile radius
+    const distance = calculateDistanceMiles(searchLat, searchLng, event.lat, event.lng);
     return distance <= maxRadiusMiles;
   });
-
-  // Sort by start time ascending
-  return results.sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
 }
 
 /**
@@ -330,9 +312,8 @@ export function filterEventsInMemory(eventsList, searchQuery) {
     const titleMatch = evt.title.toLowerCase().includes(q);
     const descMatch = (evt.description || '').toLowerCase().includes(q);
     const locationMatch = (evt.location || '').toLowerCase().includes(q);
-    const categoryMatch = (evt.category || '').toLowerCase().includes(q);
     const creatorMatch = (evt.creatorName || '').toLowerCase().includes(q);
-    return titleMatch || descMatch || locationMatch || categoryMatch || creatorMatch;
+    return titleMatch || descMatch || locationMatch || creatorMatch;
   });
 }
 
@@ -352,7 +333,6 @@ export function createEvent(eventData, currentUser) {
     location: eventData.location.trim(),
     lat: Number(eventData.lat) || 47.6062,
     lng: Number(eventData.lng) || -122.3321,
-    category: eventData.category || 'Local Gathering',
     attendees: [
       {
         id: currentUser.id,
